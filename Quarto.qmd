@@ -1,0 +1,101 @@
+---
+title: "Seman-1"
+format: html
+editor: visual
+---
+
+```{r}
+x <- 5
+x = 5
+```
+
+Que hay en el objeto "x"?
+
+```{r}
+y = 5
+
+x + y
+
+```
+
+Tres valores a un objeto llamado "Z"
+
+```{r}
+z <- c(3, 7, 2)
+z = c(3, 7, 2)
+
+```
+
+Todos los objetos pueden ser visualizados, referenciados y manipulados
+
+```{r}
+s <- x + y
+s = x + y
+a = summary(x + y)
+```
+
+Tipos de objetos en R
+
+```{r}
+a = summary(x+y)
+b = 10
+```
+
+```{r}
+class(a)
+class(b)
+```
+
+```{r}
+is.vector(a)
+```
+
+```{r}
+is.vector(z)
+```
+
+Caracter
+
+```{r}
+b = "Hipertenso"
+c = "> 65 años"
+d = "este es un caracter"
+
+class(b)
+class(c)
+```
+
+Vectores
+
+```{r}
+e = c(4, 3, 7)
+```
+
+```{r}
+f = c("Leve", "Moderado", "Grave")
+```
+
+```{r}
+g = c(6, "Alto")
+```
+
+\## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).

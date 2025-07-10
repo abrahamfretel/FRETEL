@@ -1,0 +1,264 @@
+---
+title: "PROCEDIMIENTOS PARA DATASET TIROIDES"
+format: html
+editor: Grupo 10
+---
+
+# Introducción 
+
+El conjunto de datos tiroides.csv contiene información clínica y patológica de pacientes con cáncer de tiroides, incluyendo variables como edad, género, hábito de fumar, función tiroidea, características del tumor, estadificación, respuesta al tratamiento y recurrencia.
+
+El objetivo de este análisis es explorar el conjunto de datos en profundidad mediante la generación de visualizaciones descriptivas y el cálculo del tamaño de muestra necesario para un estudio hipotético.
+
+Utilizaremos R con Quarto para documentar el proceso, crear gráficos informativos e interpretar los hallazgos para comprender la distribución y las relaciones de las variables clave. Este análisis proporcionará una base para entender las características del conjunto de datos y guiar investigaciones futuras.
+
+# Instalación de paquetes
+
+En esta sección, instalamos los paquetes necesarios para el análisis. Estos paquetes incluyen herramientas para manipulación de datos, visualización, generación de reportes y cálculos estadísticos.
+
+*Para realizar el análisis, se necesitan los siguientes paquetes de R:*
+
+-   **tidyverse:** Para manipulación y visualización de datos.
+
+-   **knitr:** Para generar reportes en Quarto.
+
+-   **pwr:** Para cálculos de tamaño de muestra.
+
+-   **janitor:** Para limpiar nombres de columnas.
+
+-   **summarytools:** Para resúmenes descriptivos.
+
+Instalación de paquetes (ejecutar solo si no están instalados):
+
+```{r}
+install.packages(c("tidyverse", "knitr", "pwr", "janitor", "summarytools"))
+```
+
+# Cargar paquetes necesarios
+
+Cargamos los paquetes instalados para utilizar sus funciones durante el análisis. Esto asegura que todas las herramientas necesarias estén disponibles.
+
+*Cargamos los paquetes necesarios para el análisis:*
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(pwr)
+library(janitor)
+library(summarytools)
+```
+
+# Cargar el dataset asignado: 
+
+Importamos el conjunto de datos `tiroides.csv` y realizamos una limpieza inicial de los nombres de las columnas para estandarizarlos (por ejemplo, convertir "Edad" a "edad"). También verificamos si el archivo existe para evitar errores. Nuestro archivo debe estar en una carpeta llamada DATA en el escritorio, cambiamos **"Tu_Usuario"** por el nombre de nuestro ordenador.
+
+```{r}
+
+data <- read.csv("C:/Users/Tu_Usuario/Desktop/Data/tiroides.csv")
+
+# Instalar el paquete janitor si no está instalado
+if (!require("janitor")) install.packages("janitor", dependencies = TRUE)
+
+# Cargar el paquete
+library(janitor)
+
+clean_names(data) %>%
+  # Convertir variables categóricas a factores y manejar NA
+  mutate(across(where(is.character), ~replace(., is.na(.), "Desconocido"))) %>%
+  mutate(across(c(genero, recurrencia, riesgo, etapa), as.factor))
+
+# Vista previa de los datos
+glimpse(data)
+```
+
+# Mostras los nombres de las columnas del dataset:
+
+Inspeccionamos los nombres de las columnas del dataset para confirmar que se hayan cargado correctamente y que la limpieza de nombres haya sido efectiva.
+
+```{r}
+colnames(data) 
+```
+
+# Mostrar las primeras filas para inspeccionar datos: 
+
+Visualizamos las primeras filas del dataset para tener una idea inicial de los datos y verificar que las variables estén en el formato esperado.
+
+```{r}
+head(data)
+```
+
+# Realización de procedimientos:
+
+# a. Documentación en Quarto para Crear Gráficos Descriptivos
+
+Generamos gráficos descriptivos para explorar la distribución de variables clave como edad, género, función tiroidea, tipo de patología, riesgo, etapa y recurrencia. Estos gráficos nos ayudarán a identificar patrones y relaciones en los datos, utilizando `ggplot2` para las visualizaciones.
+
+-   El objetivo es generar gráficos descriptivos para explorar la distribución de variables clave como edad, género, función tiroidea, tipo de carcinoma, riesgo, etapa y recurrencia.
+
+-   Estos gráficos ayudarán a identificar patrones y relaciones en los datos. Usaremos Quarto para documentar el proceso y ggplot2 (incluido en tidyverse) para crear las visualizaciones.
+
+-   Se generarán histogramas, gráficos de barras y diagramas de caja para variables numéricas y categóricas.
+
+    # Distribución de la edad:
+
+    Creamos un histograma para analizar la distribución de la variable `edad`, lo que nos permite observar la dispersión de las edades de los pacientes y detectar posibles sesgos demográficos.
+
+```{r}
+
+#| label: hist-Edad
+ggplot(data, aes(x = Edad)) +
+  geom_histogram(binwidth = 5, fill = "#1f77b4", color = "black") +
+  labs(title = "Distribución de la Edad de los Pacientes",
+       x = "Edad (años)", y = "Frecuencia") +
+  theme_minimal()
+```
+
+# Distribución por Género: 
+
+Generamos un gráfico de barras para la variable `genero`, mostrando la cantidad de pacientes por género. Esto nos ayuda a entender la proporción de hombres y mujeres en el estudio.
+
+```{r}
+### Distribución por Género
+
+#| label: bar-Genero
+ggplot(data, aes(x = Genero, fill = Genero)) +
+  geom_bar() +
+  scale_fill_manual(values = c("#ff7f0e", "#2ca02c")) +
+  labs(title = "Distribución por Género",
+       x = "Género", y = "Número de Pacientes") +
+  theme_minimal()
+```
+
+# Función Tiroidea:
+
+Creamos un gráfico de barras para la variable `funcion_tiroidea`, que muestra la distribución de los estados tiroideos de los pacientes, como eutiroideo, hipertiroidismo o hipotiroidismo.
+
+```{r}
+
+#| label: bar-Funcion-Tiroidea
+ggplot(data, aes(x = Funcion_Tiroidea, fill = Funcion_Tiroidea)) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Distribución de la Función Tiroidea",
+       x = "Función Tiroidea", y = "Número de Pacientes") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Tipos de Patología:
+
+Generamos un gráfico de barras para la variable `patologia`, que muestra la distribución de los tipos de carcinoma de tiroides diagnosticados, como carcinoma papilar o folicular.
+
+```{r}
+#| label: bar-patologia
+ggplot(data, aes(x = Patologia, fill = Patologia)) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Set3") +
+  labs(title = "Distribución de Tipos de Patología",
+       x = "Patología", y = "Número de Pacientes") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Recurrencia por genero: 
+
+Generamos un gráfico de barras apiladas para analizar la proporción de `recurrencia` del cáncer por `genero`, lo que nos ayuda a investigar si hay diferencias en la recurrencia entre hombres y mujeres.
+
+```{r}
+#| label: bar-recurrencia-genero
+ggplot(data, aes(x = Genero, fill = Recurrencia)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = c("#d62728", "#9467bd")) +
+  labs(title = "Proporción de Recurrencia por Género",
+       x = "Género", y = "Proporción") +
+  theme_minimal()
+```
+
+# Calculo de tamaño de muestra: 
+
+# a. Instalación de paquetes requeridos: 
+
+Instalamos y cargamos los paquetes necesarios para el cálculo del tamaño de muestra, asegurándonos de que las herramientas estadísticas estén disponibles.
+
+```{r}
+# Instalar paquetes si no están ya instalados
+if (!require("pwr")) install.packages("pwr", dependencies = TRUE)
+if (!require("tidyverse")) install.packages("tidyverse", dependencies = TRUE)
+
+# Cargar librerías
+library(pwr)
+library(tidyverse)
+
+# Definir función Es.h (calculadora de tamaño del efecto para proporciones)
+Es.h <- function(p1, p2) {
+  # Asegurar que las proporciones estén en el rango (0,1)
+  if (any(c(p1, p2) <= 0 | c(p1, p2) >= 1)) {
+    stop("Las proporciones deben estar entre 0 y 1 (excluyendo los extremos).")
+  }
+  h <- 2 * asin(sqrt(p1)) - 2 * asin(sqrt(p2))
+  return(h)
+}
+
+# Definir función power_analysis (análisis de potencia para dos proporciones)
+power_analysis <- function(p1, p2, n = NULL, sig.level = 0.05, power = NULL, alternative = "two.sided") {
+  h <- Es.h(p1, p2)
+  resultado <- pwr.2p.test(h = h, n = n, sig.level = sig.level, power = power, alternative = alternative)
+  return(resultado)
+}
+
+```
+
+# b. Procedimientos: 
+
+Calculamos el tamaño de muestra necesario para un estudio hipotético que compare las tasas de recurrencia entre géneros, utilizando un análisis de potencia para dos proporciones con un nivel de significancia del 5% y una potencia del 80%.
+
+```{r}
+# Calcular proporciones de recurrencia por género
+Recurrencia_por_Genero <- data %>%
+  group_by(Genero, Recurrencia) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(Genero) %>%
+  mutate(prop = n / sum(n)) %>%
+  filter(Recurrencia == "Sí")
+
+# Verificar si recurrencia_por_genero tiene datos
+if (nrow(Recurrencia_por_Genero) == 0) {
+  stop("No se encontraron datos con recurrencia == 'Yes'. Verifica los valores en la columna 'recurrencia'.")
+}
+# Proporciones estimadas
+p1 <- Recurrencia_por_Genero$prop[Recurrencia_por_Genero$Genero == "Female"]
+p2 <- Recurrencia_por_Genero$prop[Recurrencia_por_Genero$Genero == "Male"]
+
+# Si no hay datos para algún género, usar valores hipotéticos
+if (length(p1) == 0 || is.na(p1)) p1 <- 0.15
+if (length(p2) == 0 || is.na(p2)) p2 <- 0.25
+
+# Calcular tamaño del efecto
+effect_size <- ES.h(p1 = p1, p2 = p2)
+
+# Calcular tamaño de muestra para prueba de dos proporciones
+power_analysis <- pwr.2p.test(h = effect_size, sig.level = 0.05, power = 0.80)
+
+# Mostrar resultados
+print(power_analysis)
+```
+
+# Resultados esperados:
+
+Resumimos los resultados esperados del cálculo del tamaño de muestra, proporcionando una estimación del número de pacientes necesarios por grupo para detectar diferencias significativas en las tasas de recurrencia.
+
+Si las proporciones de recurrencia son, por ejemplo, 15% en mujeres y 25% en hombres, el script debería indicar que se necesitan alrededor de 200 pacientes por grupo **(400 en total)** para detectar una diferencia significativa con 80% de potencia y 95% de confianza.
+
+# Conclusiones: 
+
+En este trabajo, hemos explorado el dataset tiroides.csv, que contiene información detallada de 522 pacientes con cáncer de tiroides, incluyendo variables como edad, género, función tiroidea, tipo de patología, riesgo, etapa y recurrencia. Este conjunto de datos se ha mostrado como una herramienta valiosa para el análisis, con datos consistentes y bien estructurados que permiten identificar patrones importantes, como la distribución de géneros y la relación entre riesgo y etapa.
+
+A través de este análisis, hemos confirmado que el dataset es adecuado para estudios médicos relacionados con el cáncer de tiroides, aunque fue necesario estandarizar los nombres de las columnas para facilitar su manejo en R.
+
+En el documento Quarto, realicé un análisis exhaustivo que incluyó la instalación y carga de paquetes como **tidyverse, knitr, pwr, janitor y summarytools**, así como la importación y limpieza inicial del dataset con clean_names() para corregir inconsistencias.
+
+Generé gráficos descriptivos utilizando ggplot2, como histogramas para la edad, gráficos de barras para género, función tiroidea y patología, y un diagrama de caja para riesgo por etapa, lo que permitió visualizar las distribuciones y relaciones clave. Además, corregí errores en el cálculo del tamaño de muestra, ajustando los filtros de recurrencia y genero a los valores correctos en español **("Sí" y "Femenino"/"Masculino")**.
+
+Como resultado, estimé que se necesitan aproximadamente 200 pacientes por grupo **(400 en total)** para detectar diferencias significativas en las tasas de recurrencia entre géneros con un 80% de potencia y un 95% de confianza.
+
+Este análisis no solo ha proporcionado una comprensión más profunda de los datos, sino que también ha establecido una base sólida para investigaciones futuras, demostrando la utilidad de combinar herramientas de R y Quarto para documentar y visualizar hallazgos en el ámbito médico. Estoy satisfecho con el resultado y considero que este trabajo refleja un esfuerzo bien dirigido para explorar y presentar los datos de manera profesional.

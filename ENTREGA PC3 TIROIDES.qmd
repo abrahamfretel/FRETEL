@@ -1,0 +1,152 @@
+---
+title: "Análisis de Regresión Logística para el Dataset de Tiroides
+"
+format: html
+editor: visual
+---
+
+# Instalación y carga de paquetes 
+
+```{r}
+if (!require(tidyverse)) install.packages("tidyverse")
+if (!require(caret)) install.packages("caret")
+if (!require(broom)) install.packages("broom")
+# carga de paquetes
+library(tidyverse)
+library(caret)
+library(broom)
+```
+
+# Carga del dataset 
+
+```{r}
+data <- read.csv("C:/Users/Franco Rodrigo/Desktop/DATA/tiroides.csv", stringsAsFactors = FALSE)
+```
+
+# Preprocesamiento de datos
+
+```{r}
+# Cargar librerías necesarias
+library(dplyr)
+library(ggplot2)
+
+# ========================
+# Leer archivo desde escritorio (ajusta usuario si es necesario)
+# ========================
+data <- read.csv("C:/Users/Franco Rodrigo/Desktop/DATA/tiroides.csv", stringsAsFactors = FALSE)
+
+# ========================
+# Convertir variables categóricas a factores y manejar valores binarios
+# ========================
+data <- data %>%
+  mutate(
+    Recurrencia = as.factor(ifelse(Recurrencia == "Sí", 1, 0)),
+    Genero = as.factor(Genero),
+    Fumador = as.factor(Fumador),
+    Historia_Fumador = as.factor(Historia_Fumador),
+    Historia_Radioterapia = as.factor(Historia_Radioterapia),
+    Funcion_Tiroidea = as.factor(Funcion_Tiroidea),
+    Examen_Fisico = as.factor(Examen_Fisico),
+    Adenopatias = as.factor(Adenopatias),
+    Patologia = as.factor(Patologia),
+    Focalidad = as.factor(Focalidad),
+    Riesgo = as.factor(Riesgo),
+    T = as.factor(T),
+    N = as.factor(N),
+    M = as.factor(M),
+    Etapa = as.factor(Etapa),
+    Respuesta = as.factor(Respuesta)
+  )
+
+# ========================
+# Verificar valores faltantes
+# ========================
+missing_values <- colSums(is.na(data))
+print("Valores faltantes por columna:")
+print(missing_values)
+
+# ========================
+# Gráfico: Distribución de Género
+# ========================
+ggplot(data, aes(x = Genero)) +
+  geom_bar(fill = "#2C7BB6") +
+  labs(title = "Distribución por Género", x = "Género", y = "Frecuencia") +
+  theme_minimal()
+
+```
+
+# Ajuste del modelo de regresión logística
+
+```{r}
+# Seleccionamos variables predictoras relevantes basadas en el contexto clínico
+set.seed(123) # Para reproducibilidad
+logit_model <- glm(
+  Recurrencia ~ Edad + Genero + Fumador + Funcion_Tiroidea + Patologia + Riesgo + Adenopatias,
+  data = data,
+  family = binomial(link = "logit")
+)
+
+# Resumen del modelo
+summary(logit_model)
+```
+
+# Documentación del proceso: 
+
+1.  Se cargó el dataset y se convirtieron las variables categóricas a factores.
+2.  Se verificaron valores faltantes (ninguno encontrado).
+3.  Se ajustó un modelo de regresión logística con variables predictoras seleccionadas.
+4.  El modelo utiliza la función `glm` con familia binomial y enlace logit.
+5.  El resumen del modelo muestra los coeficientes, errores estándar, y valores p.
+
+# Documentación de la Interpretación de los Resultados
+
+La interpretación de la regresión logística se centra en los coeficientes (log-odds), odds ratios (exp(coef)), y valores p para determinar la significancia estadística.
+
+Los odds ratios indican el cambio en la probabilidad de recurrencia por unidad de cambio \# en la variable predictora, manteniendo otras constantes. Un valor p \< 0.05 indica significancia estadística.
+
+```{r}
+# Extracción de coeficientes y odds ratios
+results <- tidy(logit_model) %>%
+  mutate(
+    odds_ratio = exp(estimate),
+    conf.low = exp(estimate - 1.96 * std.error),
+    conf.high = exp(estimate + 1.96 * std.error)
+  )
+
+# Mostrar resultados
+print("Resultados del modelo de regresión logística:")
+print(results)
+```
+
+# Interpretación
+
+-   Edad: Por cada año de aumento en la edad, el odds de recurrencia cambia por el odds ratio correspondiente (exp(coeficiente de Edad)). Si p \< 0.05, es significativo.
+-   Genero: Comparado con el nivel de referencia (Femenino), el odds de recurrencia para Masculino es el odds ratio correspondiente.
+-    Fumador: Comparado con No fumadores, los fumadores tienen un odds de recurrencia según el odds ratio.
+-   Funcion_Tiroidea: Cada nivel (e.g., Hipertiroidismo clínico) se compara con el nivel de referencia (Eutiroideo).
+-   Patologia: Diferentes tipos de carcinoma (e.g., Carcinoma papilar) tienen diferentes odds de recurrencia comparados con el nivel de referencia.
+-   Riesgo: Niveles Intermedio o Alto tienen mayores odds de recurrencia comparados con Bajo.
+-   Adenopatias: La presencia de adenopatías (e.g., Derecha, Bilateral) aumenta los odds \# de recurrencia si es significativo.
+
+# Evaluación del modelo 
+
+```{r}
+# Predicciones y matriz de confusión
+predictions <- predict(logit_model, type = "response")
+predicted_classes <- ifelse(predictions > 0.5, 1, 0)
+confusion_matrix <- confusionMatrix(as.factor(predicted_classes), data$Recurrencia)
+print("Matriz de confusión:")
+print(confusion_matrix)
+```
+
+# Interpretación de la matriz de confusión 
+
+-   Accuracy: Proporción de predicciones correctas.
+-   Sensitivity: Proporción de recurrencias correctamente identificadas.
+-   Specificity: Proporción de no recurrencias correctamente identificadas.
+
+# Conclusión
+
+El modelo de regresión logística identificó factores asociados con la recurrencia del cáncer de tiroides. Las variables como Riesgo y Adenopatías parecen tener un impacto significativo, con mayores odds de recurrencia en pacientes con riesgo Intermedio/Alto o adenopatías presentes. La precisión del modelo (basada en la matriz de confusión) indica un desempeño razonable, aunque podría mejorarse con más variables o técnicas avanzadas.
+
+Limitaciones incluyen el posible desbalance de clases en `Recurrencia` y la exclusión de algunas variables debido a colinealidad o falta de significancia. Clínicamente, estos resultados sugieren que los pacientes con adenopatías o mayor riesgo requieren un seguimiento más estrecho.
